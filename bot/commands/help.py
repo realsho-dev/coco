@@ -112,7 +112,7 @@ def setup_help(bot):
                     f"**say** - Repeat text\n`Usage:` `{BOT_PREFIX}say Hello`\n"
                     f"**remindme** - Set reminder\n`Usage:` `{BOT_PREFIX}remindme 10m Take a break`\n"
                     f"**invite** - Bot invite\n`Usage:` `{BOT_PREFIX}invite`\n"
-                    f"**support** - Support server\n`Usage:` `{BOT_PREFIX}support`"
+                    f"**support** - Support server\n`Usage:` `{BOT_PREFIX}support`\n"
                     f"**suggest** - Suggestion for the developer\n`Usage:` `{BOT_PREFIX}suggest`"
                 ), inline=False)
 
