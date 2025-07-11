@@ -196,7 +196,7 @@ def setup_moderation(bot):
         """Add a role to a member"""
         try:
             await member.add_roles(role)
-            await ctx.send(f"✅ Added {role.mention} to {member.mention}")
+            await ctx.send(f"✅ Added {role.name} to {member.mention}")
         except discord.Forbidden:
             await ctx.send("❌ I don't have permission to add that role.")
         except Exception as e:
@@ -208,7 +208,7 @@ def setup_moderation(bot):
         """Remove a role from a member"""
         try:
             await member.remove_roles(role)
-            await ctx.send(f"✅ Removed {role.mention} from {member.mention}")
+            await ctx.send(f"✅ Removed {role.name} to {member.mention}")
         except discord.Forbidden:
             await ctx.send("❌ I don't have permission to remove that role.")
         except Exception as e:
