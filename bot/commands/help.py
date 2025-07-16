@@ -80,7 +80,8 @@ def setup_help(bot):
                 ), inline=False)
 
                 embed.add_field(name="😀 Emoji Management", value=(
-                    f"**addemoji** - Add emoji\n`Usage:` `{BOT_PREFIX}addemoji :emoji:`"
+                    f"**steal** - Add emoji\n`Usage:` `{BOT_PREFIX}steal :emoji:`\n
+`{BOT_PREFIX}steal (link) name`"
                 ), inline=False)
 
             elif value == "utility":
