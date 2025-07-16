@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-BOT_PREFIX = os.getenv("BOT_PREFIX", "-")  # Default to "-" if not set
+BOT_PREFIX = os.getenv("BOT_PREFIX", "-")  # Use "-" if not set in .env
 
 def setup_help(bot):
     bot.remove_command("help")
@@ -79,10 +79,14 @@ def setup_help(bot):
                     f"**removerole** - Remove role\n`Usage:` `{BOT_PREFIX}removerole @user @role`"
                 ), inline=False)
 
-                embed.add_field(name="😀 Emoji Management", value=(
-                    f"**steal** - Add emoji\n`Usage:` `{BOT_PREFIX}steal :emoji:`\n
-`{BOT_PREFIX}steal (link) name`"
-                ), inline=False)
+                embed.add_field(
+                    name="😀 Emoji Management",
+                    value=(
+                        f"**steal** - Add an emoji\n"
+                        f"`Usage:` `{BOT_PREFIX}steal :emoji:` or `{BOT_PREFIX}steal (link) name`"
+                    ),
+                    inline=False
+                )
 
             elif value == "utility":
                 embed = discord.Embed(
