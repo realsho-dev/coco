@@ -1,9 +1,10 @@
-from discord.ext import commands
 import discord
+from discord.ext import commands
 import asyncio
 import aiohttp
 import typing
 from datetime import timedelta
+import re
 
 # --- Global Variables and Configuration ---
 log_channel = None  # Channel ID where moderation actions will be logged
@@ -258,67 +259,75 @@ def setup_moderation(bot):
         except Exception as e:
             await ctx.send(f"❌ Error: {e}")
 
-    # --- Emoji Management Commands ---
+    # --- Enhanced Emoji Management Command ---
     @bot.hybrid_command(name="steal")
     @commands.has_permissions(manage_emojis=True)
     async def steal(
         ctx,
-        emoji: typing.Optional[str] = None,
+        emoji: typing.Optional[discord.PartialEmoji] = None,
         image_url: typing.Optional[str] = None,
         name: typing.Optional[str] = None
     ):
         """
         Steal an emoji from another server or add one from a URL.
-        Usage: /steal :emoji: OR /steal <image_url> <name>
+        Usage: -steal :emoji: OR -steal <image_url> <name>
         """
         try:
             if emoji:
-                # Handle emoji string input
-                try:
-                    # Convert string to PartialEmoji
-                    partial_emoji = await commands.PartialEmojiConverter().convert(ctx, emoji)
-                    emoji_bytes = await partial_emoji.read()
-                    new_emoji = await ctx.guild.create_custom_emoji(
-                        name=partial_emoji.name,
-                        image=emoji_bytes
-                    )
-                    await ctx.send(f"✅ Successfully stolen {new_emoji} with name `{partial_emoji.name}`.")
-                    await log_action(bot, "Steal Emoji", new_emoji.name, "Stolen from another server", ctx.author)
-                except commands.BadArgument:
-                    await ctx.send("❌ Please provide a valid emoji to steal.", ephemeral=True)
-                    return
+                # Handle emoji input
+                if len(ctx.guild.emojis) >= ctx.guild.emoji_limit:
+                    return await ctx.send("❌ This server has reached its emoji limit.", ephemeral=True)
+                
+                emoji_bytes = await emoji.read()
+                new_emoji = await ctx.guild.create_custom_emoji(
+                    name=emoji.name,
+                    image=emoji_bytes,
+                    reason=f"Stolen by {ctx.author}"
+                )
+                await ctx.send(f"✅ Successfully stolen {new_emoji} with name `{emoji.name}`.")
+                await log_action(bot, "Steal Emoji", new_emoji.name, "Stolen from another server", ctx.author)
+            
             elif image_url and name:
                 # Handle URL input
                 if not image_url.startswith(('http://', 'https://')):
                     return await ctx.send("❌ Please provide a valid HTTP/HTTPS URL.", ephemeral=True)
                 
+                if not re.match(r'^https?://.*\.(jpeg|jpg|gif|png)$', image_url, re.IGNORECASE):
+                    return await ctx.send("❌ Please provide a valid image URL (jpg, png, or gif)", ephemeral=True)
+                
                 if not (2 <= len(name) <= 32):
                     return await ctx.send("❌ Emoji name must be between 2 and 32 characters long.", ephemeral=True)
                 
+                if len(ctx.guild.emojis) >= ctx.guild.emoji_limit:
+                    return await ctx.send("❌ This server has reached its emoji limit.", ephemeral=True)
+                
                 async with aiohttp.ClientSession() as session:
-                    try:
-                        async with session.get(image_url) as resp:
-                            if resp.status != 200:
-                                return await ctx.send(f"❌ Failed to download image (HTTP Status: {resp.status}).", ephemeral=True)
-                            
-                            content_type = resp.headers.get('Content-Type', '')
-                            if 'image' not in content_type:
-                                return await ctx.send("❌ The provided URL does not point to an image.", ephemeral=True)
-                            
-                            image_data = await resp.read()
-                            
-                            if len(image_data) > 256 * 1024:
-                                return await ctx.send("❌ Image is too large (maximum 256KB).", ephemeral=True)
-                            
-                            new_emoji = await ctx.guild.create_custom_emoji(name=name, image=image_data)
-                            await ctx.send(f"✅ Successfully added {new_emoji} with name `{name}`.")
-                            await log_action(bot, "Add Emoji", new_emoji.name, f"Added from URL: {image_url}", ctx.author)
-                    except aiohttp.InvalidURL:
-                        await ctx.send("❌ Invalid URL provided.", ephemeral=True)
-                    except Exception as e:
-                        await ctx.send(f"❌ Error downloading image: {str(e)}", ephemeral=True)
+                    async with session.get(image_url) as resp:
+                        if resp.status != 200:
+                            return await ctx.send(f"❌ Failed to download image (HTTP Status: {resp.status}).", ephemeral=True)
+                        
+                        if 'image' not in resp.headers.get('Content-Type', ''):
+                            return await ctx.send("❌ The provided URL does not point to an image.", ephemeral=True)
+                        
+                        image_data = await resp.read()
+                        
+                        if len(image_data) > 256 * 1024:
+                            return await ctx.send("❌ Image is too large (maximum 256KB).", ephemeral=True)
+                        
+                        new_emoji = await ctx.guild.create_custom_emoji(
+                            name=name,
+                            image=image_data,
+                            reason=f"Added by {ctx.author} from URL"
+                        )
+                        await ctx.send(f"✅ Successfully added {new_emoji} with name `{name}`.")
+                        await log_action(bot, "Add Emoji", new_emoji.name, f"Added from URL: {image_url}", ctx.author)
             else:
-                await ctx.send("❌ Invalid usage. Use `/steal :emoji:` or `/steal <image_url> <name>`.", ephemeral=True)
+                await ctx.send(
+                    "❌ Invalid usage. Use:\n"
+                    "- `-steal :emoji:` to steal from another server\n"
+                    "- `-steal <image_url> <name>` to add from a URL",
+                    ephemeral=True
+                )
                 
         except discord.HTTPException as e:
             if e.code == 30008:
