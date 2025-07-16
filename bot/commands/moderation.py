@@ -214,30 +214,42 @@ def setup_moderation(bot):
         except Exception as e:
             await ctx.send(f"❌ Error: {e}")
 
-    @bot.hybrid_command(name="addemoji")
+    @bot.hybrid_command(name="steal")
     @commands.has_permissions(manage_emojis=True)
-    async def addemoji(ctx, name: str, emoji: discord.PartialEmoji = None, image_url: str = None):
+    async def steal(ctx, emoji: discord.PartialEmoji = None, name: str = None, image_url: str = None):
         """
-        Add a custom emoji to the server
+        Steal an emoji from another server or add from URL
         
-        Parameters
-        ----------
-        name: The name for the new emoji
-        emoji: An existing emoji to copy (optional)
-        image_url: URL of an image to use (optional)
+        Usage:
+        -steal :emoji: (steals with original name)
+        -steal :image_url: name (adds emoji from URL with given name)
         """
         if not emoji and not image_url:
             return await ctx.send("You must provide either an emoji or an image URL")
             
         try:
             if emoji:
+                # Steal emoji with original name
                 emoji_bytes = await emoji.read()
-                new_emoji = await ctx.guild.create_custom_emoji(name=name, image=emoji_bytes)
+                new_emoji = await ctx.guild.create_custom_emoji(name=emoji.name, image=emoji_bytes)
+                await ctx.send(f"Stolen emoji {new_emoji} with name `{emoji.name}`")
             else:
-                emoji_image = await discord.utils.get_link_image(image_url)
-                new_emoji = await ctx.guild.create_custom_emoji(name=name, image=emoji_image)
-                
-            await ctx.send(f"Added emoji {new_emoji} with name `{name}`")
+                # Add from URL with custom name
+                if not name:
+                    return await ctx.send("You must provide a name when adding from URL")
+                    
+                async with bot.session.get(image_url) as resp:
+                    if resp.status != 200:
+                        return await ctx.send("Could not download the image from the URL")
+                    image_data = await resp.read()
+                    
+                new_emoji = await ctx.guild.create_custom_emoji(name=name, image=image_data)
+                await ctx.send(f"Added emoji {new_emoji} with name `{name}`")
+        except discord.HTTPException as e:
+            if e.code == 30008:
+                await ctx.send("Maximum number of emojis reached (50 for normal servers, 250 for boosted)")
+            else:
+                await ctx.send(f"Error: {str(e)}")
         except Exception as e:
             await ctx.send(f"Error: {str(e)}")
 
