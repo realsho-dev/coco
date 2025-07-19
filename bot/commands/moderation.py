@@ -207,7 +207,7 @@ def setup_moderation(bot):
 
             new_channel = await ctx.channel.clone()
             await ctx.channel.delete()
-            await new_channel.send("💥 Channel nuked!")
+            await new_channel.send("💥 Channel nuked by {user_mention}! https://tenor.com/view/explosion-mushroom-cloud-atomic-bomb-bomb-boom-gif-4464831")
             await log_action(bot, "Channel Nuke", new_channel.name, "Channel recreated", ctx.author)
         except asyncio.TimeoutError:
             await ctx.send("Nuke cancelled. You did not confirm in time.")
