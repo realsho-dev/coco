@@ -194,25 +194,29 @@ def setup_moderation(bot):
         await log_action(bot, "Unhide Channel", ctx.channel.name, "Visible to @everyone", ctx.author)
 
     @bot.hybrid_command(name="nuke")
-    @commands.has_permissions(manage_channels=True)
-    async def nuke(ctx):
-        try:
-            confirm = await ctx.send("Are you sure you want to nuke this channel? React with ✅ to confirm.")
-            await confirm.add_reaction("✅")
+@commands.has_permissions(manage_channels=True)
+async def nuke(ctx):
+    try:
+        confirm = await ctx.send("Are you sure you want to nuke this channel? React with ✅ to confirm.")
+        await confirm.add_reaction("✅")
 
-            def check(reaction, user):
-                return user == ctx.author and str(reaction.emoji) == '✅' and reaction.message.id == confirm.id
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) == '✅' and reaction.message.id == confirm.id
 
-            await bot.wait_for('reaction_add', check=check, timeout=30.0)
+        await bot.wait_for('reaction_add', check=check, timeout=30.0)
 
-            new_channel = await ctx.channel.clone()
-            await ctx.channel.delete()
-            await new_channel.send("💥 Channel nuked by {user_mention}! https://tenor.com/view/explosion-mushroom-cloud-atomic-bomb-bomb-boom-gif-4464831")
-            await log_action(bot, "Channel Nuke", new_channel.name, "Channel recreated", ctx.author)
-        except asyncio.TimeoutError:
-            await ctx.send("Nuke cancelled. You did not confirm in time.")
-        except Exception as e:
-            await ctx.send(f"An error occurred during nuke: {e}")
+        user_mention = ctx.author.mention  # 💡 Define this before using it
+        new_channel = await ctx.channel.clone()
+        await ctx.channel.delete()
+        await new_channel.send(
+            f"💥 Channel nuked by {user_mention}!\nhttps://media.tenor.com/SChKroGIZO8AAAAC/explosion-mushroom-cloud.gif"
+        )
+        await log_action(bot, "Channel Nuke", new_channel.name, "Channel recreated", ctx.author)
+
+    except asyncio.TimeoutError:
+        await ctx.send("Nuke cancelled. You did not confirm in time.")
+    except Exception as e:
+        await ctx.send(f"An error occurred during nuke: {e}")
 
     # --- Role Management Commands ---
     @bot.hybrid_command(name="addrole")
