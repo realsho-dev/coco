@@ -8,12 +8,11 @@ import re
 
 # --- Global Variables and Configuration ---
 log_channel = None  # Channel ID where moderation actions will be logged
-warnings_db = {}  # A simple in-memory dictionary to store user warnings
+warnings_db = {}  # In-memory warnings (as a dictionary)
 last_deleted_message = None  # Stores the last deleted message for the snipe command
 
-# --- Helper Functions ---
+# --- Helper Function for Logging Moderator Actions ---
 async def log_action(bot, action, target, reason, moderator, extra_info=""):
-    """Logs moderation actions to a predefined log channel."""
     if log_channel:
         channel = bot.get_channel(log_channel)
         if channel:
@@ -25,9 +24,8 @@ async def log_action(bot, action, target, reason, moderator, extra_info=""):
             await channel.send(embed=embed)
 
 def setup_moderation(bot):
-    """Sets up all moderation commands and event listeners for the bot."""
+    # --- Moderation Commands ---
 
-    # --- Core Moderation Commands ---
     @bot.hybrid_command(name="kick")
     @commands.has_permissions(kick_members=True)
     async def kick(ctx, member: discord.Member, *, reason: str = None):
@@ -90,7 +88,6 @@ def setup_moderation(bot):
         await ctx.send(f"Removed timeout from {member.name}")
         await log_action(bot, "Untimeout", member.name, "Timeout removed", ctx.author)
 
-    # --- Warning System Commands ---
     @bot.hybrid_command(name="warn")
     @commands.has_permissions(manage_messages=True)
     async def warn(ctx, member: discord.Member, *, reason: str = "No reason provided"):
@@ -124,7 +121,6 @@ def setup_moderation(bot):
         else:
             await ctx.send(f"No warnings found for {member.name} to clear.")
 
-    # --- Message Management Commands ---
     @bot.hybrid_command(name="purge")
     @commands.has_permissions(manage_messages=True)
     async def purge(ctx, amount: int):
@@ -158,7 +154,6 @@ def setup_moderation(bot):
         global last_deleted_message
         last_deleted_message = message
 
-    # --- Channel Management Commands ---
     @bot.hybrid_command(name="lock")
     @commands.has_permissions(manage_channels=True)
     async def lock(ctx):
@@ -209,9 +204,11 @@ def setup_moderation(bot):
             user_mention = ctx.author.mention
             new_channel = await ctx.channel.clone()
             await ctx.channel.delete()
-            await new_channel.send(
-                f"💥 Channel nuked by {user_mention}!\nhttps://media.tenor.com/SChKroGIZO8AAAAC/explosion-mushroom-cloud.gif"
-            )
+
+            # FIX: Show GIF using an embed (not just a link)
+            embed = discord.Embed(description=f"💥 Channel nuked by {user_mention}!")
+            embed.set_image(url="https://media.tenor.com/SChKroGIZO8AAAAC/explosion-mushroom-cloud.gif")
+            await new_channel.send(embed=embed)
             await log_action(bot, "Channel Nuke", new_channel.name, "Channel recreated", ctx.author)
 
         except asyncio.TimeoutError:
@@ -219,7 +216,6 @@ def setup_moderation(bot):
         except Exception as e:
             await ctx.send(f"An error occurred during nuke: {e}")
 
-    # --- Role Management Commands ---
     @bot.hybrid_command(name="addrole")
     @commands.has_permissions(manage_roles=True)
     async def addrole(ctx, member: discord.Member, role: discord.Role):
@@ -244,7 +240,6 @@ def setup_moderation(bot):
         except Exception as e:
             await ctx.send(f"❌ Error: {e}")
 
-    # --- Enhanced Emoji Management Command ---
     @bot.hybrid_command(name="steal")
     @commands.has_permissions(manage_emojis=True)
     async def steal(
