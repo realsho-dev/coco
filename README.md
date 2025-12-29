@@ -1,6 +1,6 @@
 # 🧠 Coco – Your Smart Discord Bot
 
-**Coco** is a powerful and flexible **Discord bot** built with `discord.py` and integrated with **Together AI** for intelligent conversations. It offers a rich set of **moderation**, **utility**, and **AI** features—all in one.
+**Coco** is a powerful and flexible **Discord bot** built with `discord.py` and integrated with **Together AI** for intelligent conversations. It offers a rich set of **moderation**, **utility**, and **AI** features—all in one bot.
 
 ---
 
